@@ -32,6 +32,30 @@
 /**
  `AFURLSessionManager` creates and manages an `NSURLSession` object based on a specified `NSURLSessionConfiguration` object, which conforms to `<NSURLSessionTaskDelegate>`, `<NSURLSessionDataDelegate>`, `<NSURLSessionDownloadDelegate>`, and `<NSURLSessionDelegate>`.
 
+ NSURLSession
+ NSURLSessionConfiguration
+ NSURLSessionTask
+ 
+ NSURLSessionDelegate
+ NSURLSessionTaskDelegate
+ 
+ TaskNSURLSessionDataTask
+ NSURLSessionDataDelegate
+ 
+ NSURLRequest、NSURLSessionConfiguration、NSURLSession以及NSURLSessionTask & delegate
+ 
+ NSURLSessionDelegate
+ 针对整体网络会话:证书、重定向等
+ NSURLSessionTaskDelegate
+ 针对网络任务：开始、结束、单次proposedResponse等
+ NSURLSessionDownloadDelegate
+ 针对下载任务的特殊代理
+ NSURLSessionStreamDelegate
+ 为数据流上传提供数据源的特殊代理
+
+ 作者：kirito_song
+ 链接：https://www.jianshu.com/p/16ed20b0e7b8
+ 
  ## Subclassing Notes
 
  This is the base class for `AFHTTPSessionManager`, which adds functionality specific to making HTTP requests. If you are looking to extend `AFURLSessionManager` specifically for HTTP, consider subclassing `AFHTTPSessionManager` instead.
@@ -96,6 +120,7 @@ NS_ASSUME_NONNULL_BEGIN
 
 /**
  The operation queue on which delegate callbacks are run.
+ 代理回调的队列
  */
 @property (readonly, nonatomic, strong) NSOperationQueue *operationQueue;
 
@@ -299,7 +324,7 @@ NS_ASSUME_NONNULL_BEGIN
                                        completionHandler:(nullable void (^)(NSURLResponse *response, NSURL * _Nullable filePath, NSError * _Nullable error))completionHandler;
 
 ///---------------------------------
-/// @name Getting Progress for Tasks
+/// @name Getting Progress for Tasks 获取任务的进度
 ///---------------------------------
 
 /**
@@ -321,7 +346,7 @@ NS_ASSUME_NONNULL_BEGIN
 - (nullable NSProgress *)downloadProgressForTask:(NSURLSessionTask *)task;
 
 ///-----------------------------------------
-/// @name Setting Session Delegate Callbacks
+/// @name Setting Session Delegate Callbacks 给session 设置回调
 ///-----------------------------------------
 
 /**
@@ -339,7 +364,7 @@ NS_ASSUME_NONNULL_BEGIN
 - (void)setSessionDidReceiveAuthenticationChallengeBlock:(nullable NSURLSessionAuthChallengeDisposition (^)(NSURLSession *session, NSURLAuthenticationChallenge *challenge, NSURLCredential * _Nullable __autoreleasing * _Nullable credential))block;
 
 ///--------------------------------------
-/// @name Setting Task Delegate Callbacks
+/// @name Setting Task Delegate Callbacks 给task 设置回调
 ///--------------------------------------
 
 /**
@@ -448,7 +473,7 @@ NS_ASSUME_NONNULL_BEGIN
 ///--------------------
 
 /**
- Posted when a task resumes.
+ Posted when a task resumes. 任务恢复时发送。
  */
 FOUNDATION_EXPORT NSString * const AFNetworkingTaskDidResumeNotification;
 

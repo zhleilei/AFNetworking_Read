@@ -45,8 +45,8 @@ typedef NSString * (^AFQueryStringSerializationBlock)(NSURLRequest *request, id 
     - returns: The percent-escaped string.
  */
 NSString * AFPercentEscapedStringFromString(NSString *string) {
-    static NSString * const kAFCharactersGeneralDelimitersToEncode = @":#[]@"; // does not include "?" or "/" due to RFC 3986 - Section 3.4
-    static NSString * const kAFCharactersSubDelimitersToEncode = @"!$&'()*+,;=";
+    static NSString * const kAFCharactersGeneralDelimitersToEncode = @":#[]@"; // does not include "?" or "/" due to RFC 3986 - Section 3.4 通用分隔符
+    static NSString * const kAFCharactersSubDelimitersToEncode = @"!$&'()*+,;="; // 子定界付
 
     NSMutableCharacterSet * allowedCharacterSet = [[NSCharacterSet URLQueryAllowedCharacterSet] mutableCopy];
     [allowedCharacterSet removeCharactersInString:[kAFCharactersGeneralDelimitersToEncode stringByAppendingString:kAFCharactersSubDelimitersToEncode]];

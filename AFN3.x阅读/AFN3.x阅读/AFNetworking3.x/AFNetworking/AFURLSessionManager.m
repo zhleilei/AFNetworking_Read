@@ -45,6 +45,7 @@ static void url_session_manager_create_task_safely(dispatch_block_t block) {
         // Fix of bug
         // Open Radar:http://openradar.appspot.com/radar?id=5871104061079552 (status: Fixed in iOS8)
         // Issue about:https://github.com/AFNetworking/AFNetworking/issues/2093
+        #warning zll 理解
         /**
          理解下，第一为什么用sync，因为是想要主线程等在这，等执行完，在返回，因为必须执行完dataTask才有数据，传值才有意义。
          
@@ -127,6 +128,7 @@ typedef void (^AFURLSessionTaskProgressBlock)(NSProgress *);
 typedef void (^AFURLSessionTaskCompletionHandler)(NSURLResponse *response, id responseObject, NSError *error);
 
 
+#warning zll AFURLSessionManagerTaskDelegate 在这个类里实现系统的代理方法 断点打印流程
 #pragma mark -
 // 所有的task都有此代理来处理--所以遵循NSURLSessionTaskDelegate、NSURLSessionDataDelegate、NSURLSessionDownloadDelegate等不同类型task的代理方法
 @interface AFURLSessionManagerTaskDelegate : NSObject <NSURLSessionTaskDelegate, NSURLSessionDataDelegate, NSURLSessionDownloadDelegate>
@@ -212,6 +214,7 @@ typedef void (^AFURLSessionTaskCompletionHandler)(NSURLResponse *response, id re
 
 #pragma mark - NSURLSessionTaskDelegate
 // MARK:<SessionManager的代理实现的session代理方法！被从NSURLSession代理方法那转发到这>
+#warning zll 转发路径 系统->manager->managertaskDelegate
 // task完成回调
 - (void)URLSession:(__unused NSURLSession *)session
               task:(NSURLSessionTask *)task
@@ -333,6 +336,7 @@ didCompleteWithError:(NSError *)error
     self.downloadProgress.totalUnitCount = dataTask.countOfBytesExpectedToReceive;
     self.downloadProgress.completedUnitCount = dataTask.countOfBytesReceived;
     // 拼接数据
+    #warning zll self.mutableData不会拼接下载的data数据
     // 使用downloadTask下载的时候 此方法不会调用 也就是说 self.mutableData不会拼接下载的data数据 downloadTask 走下面的NSURLSessionDownloadDelegate
     [self.mutableData appendData:data];
 }
@@ -368,6 +372,7 @@ expectedTotalBytes:(int64_t)expectedTotalBytes{
     self.downloadProgress.completedUnitCount = fileOffset;
 }
 
+#warning zll manager 转发到这里 这个和manager 里面的有什么区别?
 - (void)URLSession:(NSURLSession *)session
       downloadTask:(NSURLSessionDownloadTask *)downloadTask
 didFinishDownloadingToURL:(NSURL *)location
@@ -1308,7 +1313,8 @@ static NSString * const AFNSURLSessionTaskDidSuspendNotification = @"com.alamofi
 - (void)setDataTaskDidBecomeDownloadTaskBlock:(void (^)(NSURLSession *session, NSURLSessionDataTask *dataTask, NSURLSessionDownloadTask *downloadTask))block {
     self.dataTaskDidBecomeDownloadTask = block;
 }
-#warning zll 下载写入数据 (断点续传...)
+#warning zll AFN UML
+#warning zll 下载写入数据 (例如断点数据...)
 - (void)setDataTaskDidReceiveDataBlock:(void (^)(NSURLSession *session, NSURLSessionDataTask *dataTask, NSData *data))block {
     self.dataTaskDidReceiveData = block;
 }
@@ -1626,7 +1632,7 @@ totalBytesExpectedToSend:(int64_t)totalBytesExpectedToSend
  函数讨论：
  注意这里的error不会报告服务期端的error，他表示的是客户端这边的error，比如无法解析hostname或者连不上host主机。
  */
-
+#warning zll 系统回调的?
 // 在子线程回调的
 - (void)URLSession:(NSURLSession *)session
               task:(NSURLSessionTask *)task
@@ -1887,6 +1893,7 @@ didFinishDownloadingToURL:(NSURL *)location
             return;
         }
     }
+    #warning zll 为什么要做代理转发
     //转发代理方法
     if (delegate) {
         [delegate URLSession:session downloadTask:downloadTask didFinishDownloadingToURL:location];

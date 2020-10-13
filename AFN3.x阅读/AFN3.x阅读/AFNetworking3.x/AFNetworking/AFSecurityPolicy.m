@@ -372,7 +372,7 @@ static NSArray * AFPublicKeyTrustChainForServerTrust(SecTrustRef serverTrust) {
      allowInvalidCertificates 是否允许非法证书，基本模式预埋证书都是未经过第三方权威机构签名的证书 故使用 AFSSLPinningModePublicKey和 AFSSLPinningModeCertificate 时候 请将其设置成YES
      validatesCertificateChain 是否校验服务服务器证书签发root证书
  */
-
+#warning zll 证书验证
 /// AF可以让你在系统验证证书之前，就去自主验证。然后如果自己验证不正确，直接取消网络请求。否则验证通过则继续进行系统验证。
 - (BOOL)evaluateServerTrust:(SecTrustRef)serverTrust
                   forDomain:(NSString *)domain

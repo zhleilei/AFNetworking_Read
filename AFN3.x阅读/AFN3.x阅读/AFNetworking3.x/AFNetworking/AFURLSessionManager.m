@@ -372,7 +372,7 @@ expectedTotalBytes:(int64_t)expectedTotalBytes{
     self.downloadProgress.completedUnitCount = fileOffset;
 }
 
-#warning zll manager 转发到这里 这个和manager 里面的有什么区别?
+#warning zll manager 转发到这里 这个和manager 里面的有什么区别?  断点测试
 - (void)URLSession:(NSURLSession *)session
       downloadTask:(NSURLSessionDownloadTask *)downloadTask
 didFinishDownloadingToURL:(NSURL *)location
@@ -431,7 +431,7 @@ static inline BOOL af_addMethod(Class theClass, SEL selector, Method method) {
 static NSString * const AFNSURLSessionTaskDidResumeNotification  = @"com.alamofire.networking.nsurlsessiontask.resume";
 static NSString * const AFNSURLSessionTaskDidSuspendNotification = @"com.alamofire.networking.nsurlsessiontask.suspend";
 
-#warning zll 作用??
+#warning zll 作用
 // 这个类大概的作用就是替换掉NSUrlSession中的resume和suspend方法。正常处理原有逻辑的同时，多发送一个通知，以下是我们需要替换的新方法
 @interface _AFURLSessionTaskSwizzling : NSObject
 
@@ -1424,7 +1424,15 @@ didReceiveChallenge:(NSURLAuthenticationChallenge *)challenge
     if (self.sessionDidReceiveAuthenticationChallenge) {
         disposition = self.sessionDidReceiveAuthenticationChallenge(session, challenge, &credential);
     } else {
-        
+        #warning zll test 下面的几个判断
+        /*
+         NSURLSessionAuthChallengeUseCredential = 0, 使用该证书 安装该证书
+         NSURLSessionAuthChallengePerformDefaultHandling = 1, 默认采用的方式,该证书被忽略
+         NSURLSessionAuthChallengeCancelAuthenticationChallenge = 2, 取消请求,证书忽略
+         NSURLSessionAuthChallengeRejectProtectionSpace = 3,          拒绝
+         
+
+         */
         if ([challenge.protectionSpace.authenticationMethod isEqualToString:NSURLAuthenticationMethodServerTrust]) {
             /**
              判断如果服务端的认证方法要求是NSURLAuthenticationMethodServerTrust,则只需要验证服务端证书是否安全（即https的单向认证，这是AF默认处理的认证方式，其他的认证方式，只能由我们自定义Block的实现）
@@ -1437,7 +1445,8 @@ didReceiveChallenge:(NSURLAuthenticationChallenge *)challenge
             //  基于客户端的安全策略来决定是否信任该服务器，不信任的话，也就没必要响应挑战
             if ([self.securityPolicy evaluateServerTrust:challenge.protectionSpace.serverTrust forDomain:challenge.protectionSpace.host]) {
                 
-                // NSURLCredential: This class is an immutable object representing an authentication credential.
+                // NSURLCredential: This class is an immutable object representing an authentication credential. NSURLCredential：表示身份验证凭据的不可变对象。
+//                身份认证 NSURLCredential: https://www.jianshu.com/p/5701aae1e3f3
                 credential = [NSURLCredential credentialForTrust:challenge.protectionSpace.serverTrust];
                 if (credential) {
                     disposition = NSURLSessionAuthChallengeUseCredential;
@@ -1451,7 +1460,7 @@ didReceiveChallenge:(NSURLAuthenticationChallenge *)challenge
             disposition = NSURLSessionAuthChallengePerformDefaultHandling;
         }
     }
-    // 完成挑战
+    // 完成挑战 回调给系统
     if (completionHandler) {
         completionHandler(disposition, credential);
     }

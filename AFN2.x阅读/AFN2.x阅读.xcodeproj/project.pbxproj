@@ -140,6 +140,8 @@
 		2AD48A841F49D67000CF02F6 /* AFNetworking */ = {
 			isa = PBXGroup;
 			children = (
+				2AD48A901F49D67000CF02F6 /* AFURLConnectionOperation.h */,
+				2AD48A911F49D67000CF02F6 /* AFURLConnectionOperation.m */,
 				2AD48A851F49D67000CF02F6 /* AFHTTPRequestOperation.h */,
 				2AD48A861F49D67000CF02F6 /* AFHTTPRequestOperation.m */,
 				2AD48A871F49D67000CF02F6 /* AFHTTPRequestOperationManager.h */,
@@ -149,8 +151,6 @@
 				2AD48A8D1F49D67000CF02F6 /* AFNetworkReachabilityManager.m */,
 				2AD48A8E1F49D67000CF02F6 /* AFSecurityPolicy.h */,
 				2AD48A8F1F49D67000CF02F6 /* AFSecurityPolicy.m */,
-				2AD48A901F49D67000CF02F6 /* AFURLConnectionOperation.h */,
-				2AD48A911F49D67000CF02F6 /* AFURLConnectionOperation.m */,
 				2AD48A921F49D67000CF02F6 /* AFURLRequestSerialization.h */,
 				2AD48A931F49D67000CF02F6 /* AFURLRequestSerialization.m */,
 				2AD48A941F49D67000CF02F6 /* AFURLResponseSerialization.h */,
@@ -225,6 +225,7 @@
 			developmentRegion = English;
 			hasScannedForEncodings = 0;
 			knownRegions = (
+				English,
 				en,
 				Base,
 			);

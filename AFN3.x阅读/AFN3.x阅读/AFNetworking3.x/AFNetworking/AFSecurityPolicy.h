@@ -23,8 +23,11 @@
 #import <Security/Security.h>
 
 typedef NS_ENUM(NSUInteger, AFSSLPinningMode) {
+    //不验证
     AFSSLPinningModeNone,
+    //只验证公钥
     AFSSLPinningModePublicKey,
+    //验证证书
     AFSSLPinningModeCertificate,
 };
 

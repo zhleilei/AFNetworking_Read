@@ -431,7 +431,6 @@ static inline BOOL af_addMethod(Class theClass, SEL selector, Method method) {
 static NSString * const AFNSURLSessionTaskDidResumeNotification  = @"com.alamofire.networking.nsurlsessiontask.resume";
 static NSString * const AFNSURLSessionTaskDidSuspendNotification = @"com.alamofire.networking.nsurlsessiontask.suspend";
 
-#warning zll 作用??
 // 这个类大概的作用就是替换掉NSUrlSession中的resume和suspend方法。正常处理原有逻辑的同时，多发送一个通知，以下是我们需要替换的新方法
 @interface _AFURLSessionTaskSwizzling : NSObject
 

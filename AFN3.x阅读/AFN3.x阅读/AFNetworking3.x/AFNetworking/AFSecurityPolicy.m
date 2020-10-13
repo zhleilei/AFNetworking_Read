@@ -43,6 +43,7 @@ _out:
 //判断两个公钥是否相同
 static BOOL AFSecKeyIsEqualToKey(SecKeyRef key1, SecKeyRef key2) {
 #if TARGET_OS_IOS || TARGET_OS_WATCH || TARGET_OS_TV
+     //iOS 判断二者地址
     return [(__bridge id)key1 isEqual:(__bridge id)key2];
 #else
     return [AFSecKeyGetData(key1) isEqual:AFSecKeyGetData(key2)];
@@ -80,7 +81,13 @@ _out:
 
     return allowedPublicKey;
 }
-
+/*
+ 一个是SecTrustRef类型的serverTrust，这是什么呢？我们看到苹果的文档介绍如下：
+ CFType used for performing X.509 certificate trust evaluations.
+ 
+ 大概意思是用于执行X。509证书信任评估，
+ 再讲简单点，其实就是一个容器，装了服务器端需要验证的证书的基本信息、公钥等等，不仅如此，它还可以装一些评估策略，还有客户端的锚点证书，这个客户端的证书，可以用来和服务端的证书去匹配验证的。
+ */
 
 // 这个方法用来验证serverTrust是否有效，其中主要是交由系统APISecTrustEvaluate来验证的，它验证完之后会返回一个SecTrustResultType枚举类型的result，然后我们根据这个result去判断是否证书是否有效。
 static BOOL AFServerTrustIsValid(SecTrustRef serverTrust) {
@@ -90,6 +97,25 @@ static BOOL AFServerTrustIsValid(SecTrustRef serverTrust) {
     //__Require_noErr_Quiet 用来判断前者是0还是非0，如果0则表示没错，就跳到后面的表达式所在位置去执行，否则表示有错就继续往下执行。
     //SecTrustEvaluate系统评估证书的是否可信的函数，去系统根目录找，然后把结果赋值给result。评估结果匹配，返回0，否则出错返回非0
     //do while 0 ,只执行一次，为啥要这样写....
+    
+    /*
+     #ifndef __Require_noErr_Quiet
+         #define __Require_noErr_Quiet(errorCode, exceptionLabel)                      \
+           do                                                                          \
+           {                                                                           \
+               if ( __builtin_expect(0 != (errorCode), 0) )                            \
+               {                                                                       \
+                   goto exceptionLabel;                                                \
+               }                                                                       \
+           } while ( 0 )
+     #endif
+     
+     这个函数主要作用就是，判断errorCode是否为0，不为0则，程序用goto跳到exceptionLabel位置去执行。这个exceptionLabel就是一个代码位置标识，类似上面的_out。
+     说它有意思的地方是在于，它用了一个do...while(0)循环，循环条件为0，也就是只执行一次循环就结束。
+
+     这么做是为了适配早期的API??!
+     
+     */
     
     __Require_noErr_Quiet(SecTrustEvaluate(serverTrust, &result), _out);
     
@@ -112,9 +138,12 @@ _out:
 
 //获取证书链
 static NSArray * AFCertificateTrustChainForServerTrust(SecTrustRef serverTrust) {
+    //使用SecTrustGetCertificateCount函数获取到serverTrust中需要评估的证书链中的证书数目，并保存到certificateCount中
     CFIndex certificateCount = SecTrustGetCertificateCount(serverTrust);
+    //创建数组
     NSMutableArray *trustChain = [NSMutableArray arrayWithCapacity:(NSUInteger)certificateCount];
 
+    //// 使用SecTrustGetCertificateAtIndex函数获取到证书链中的每个证书，并添加到trustChain中，最后返回trustChain
     for (CFIndex i = 0; i < certificateCount; i++) {
         SecCertificateRef certificate = SecTrustGetCertificateAtIndex(serverTrust, i);
         [trustChain addObject:(__bridge_transfer NSData *)SecCertificateCopyData(certificate)];
@@ -125,24 +154,38 @@ static NSArray * AFCertificateTrustChainForServerTrust(SecTrustRef serverTrust) 
 
 // 从serverTrust中取出服务器端传过来的所有可用的证书，并依次得到相应的公钥
 static NSArray * AFPublicKeyTrustChainForServerTrust(SecTrustRef serverTrust) {
+    
+    // 接下来的一小段代码和上面AFCertificateTrustChainForServerTrust函数的作用基本一致，都是为了获取到serverTrust中证书链上的所有证书，并依次遍历，取出公钥。
+    //安全策略
     SecPolicyRef policy = SecPolicyCreateBasicX509();
     CFIndex certificateCount = SecTrustGetCertificateCount(serverTrust);
     NSMutableArray *trustChain = [NSMutableArray arrayWithCapacity:(NSUInteger)certificateCount];
+    //遍历serverTrust里证书的证书链。
     for (CFIndex i = 0; i < certificateCount; i++) {
+        //从证书链取证书
         SecCertificateRef certificate = SecTrustGetCertificateAtIndex(serverTrust, i);
-
+        //数组
         SecCertificateRef someCertificates[] = {certificate};
+        //CF数组
         CFArrayRef certificates = CFArrayCreate(NULL, (const void **)someCertificates, 1, NULL);
 
         SecTrustRef trust;
+        
+        // 根据给定的certificates和policy来生成一个trust对象
+        //不成功跳到 _out。
         __Require_noErr_Quiet(SecTrustCreateWithCertificates(certificates, policy, &trust), _out);
 
         SecTrustResultType result;
+        
+        // 使用SecTrustEvaluate来评估上面构建的trust
+        //评估失败跳到 _out
         __Require_noErr_Quiet(SecTrustEvaluate(trust, &result), _out);
 
+        // 如果该trust符合X.509证书格式，那么先使用SecTrustCopyPublicKey获取到trust的公钥，再将此公钥添加到trustChain中
         [trustChain addObject:(__bridge_transfer id)SecTrustCopyPublicKey(trust)];
 
     _out:
+        //释放资源
         if (trust) {
             CFRelease(trust);
         }
@@ -150,12 +193,17 @@ static NSArray * AFPublicKeyTrustChainForServerTrust(SecTrustRef serverTrust) {
         if (certificates) {
             CFRelease(certificates);
         }
-
+    
         continue;
     }
     CFRelease(policy);
 
+    // 返回对应的一组公钥
     return [NSArray arrayWithArray:trustChain];
+    
+    /*
+     两个方法功能类似，都是调用了一些系统的API，利用For循环，获取证书链上每一个证书或者公钥。具体内容看源码很好理解。唯一需要注意的是，这个获取的证书排序，是从证书链的叶节点，到根节点的。
+     */
 }
 
 #pragma mark -
@@ -200,7 +248,7 @@ static NSArray * AFPublicKeyTrustChainForServerTrust(SecTrustRef serverTrust) {
 + (instancetype)policyWithPinningMode:(AFSSLPinningMode)pinningMode {
     return [self policyWithPinningMode:pinningMode withPinnedCertificates:[self defaultPinnedCertificates]];
 }
-
+// 创建并返回具有指定模式的安全策略。
 + (instancetype)policyWithPinningMode:(AFSSLPinningMode)pinningMode withPinnedCertificates:(NSSet *)pinnedCertificates {
     AFSecurityPolicy *securityPolicy = [[self alloc] init];
     securityPolicy.SSLPinningMode = pinningMode;
@@ -221,12 +269,16 @@ static NSArray * AFPublicKeyTrustChainForServerTrust(SecTrustRef serverTrust) {
     return self;
 }
 
-//设置证书数组
-- (void)setPinnedCertificates:(NSSet *)pinnedCertificates {
+  //设置证书数组
+   - (void)setPinnedCertificates:(NSSet *)pinnedCertificates {
+    
     _pinnedCertificates = pinnedCertificates;
 
+    //获取对应公钥集合
     if (self.pinnedCertificates) {
+        //创建公钥集合
         NSMutableSet *mutablePinnedPublicKeys = [NSMutableSet setWithCapacity:[self.pinnedCertificates count]];
+        //从证书中拿到公钥。
         for (NSData *certificate in self.pinnedCertificates) {
             id publicKey = AFPublicKeyForCertificate(certificate);
             if (!publicKey) {
@@ -234,13 +286,11 @@ static NSArray * AFPublicKeyTrustChainForServerTrust(SecTrustRef serverTrust) {
             }
             [mutablePinnedPublicKeys addObject:publicKey];
         }
-        // 获取所有证书中的公钥
         self.pinnedPublicKeys = [NSSet setWithSet:mutablePinnedPublicKeys];
     } else {
         self.pinnedPublicKeys = nil;
     }
 }
-
 #pragma mark -
 
 /** 术语解释 https://developer.apple.com/library/archive/technotes/tn2232/_index.html#//apple_ref/doc/uid/DTS40012884-CH1-SECGLOSSARY
@@ -373,6 +423,18 @@ static NSArray * AFPublicKeyTrustChainForServerTrust(SecTrustRef serverTrust) {
      validatesCertificateChain 是否校验服务服务器证书签发root证书
  */
 
+/*
+ 这个方法是AFSecurityPolicy最核心的方法，其他的都是为了配合这个方法。这个方法完成了服务端的证书的信任评估。我们总结一下这个方法做了什么（细节可以看注释）：
+ 1.根据模式，如果是AFSSLPinningModeNone，则肯定是返回YES，不论是自签还是公信机构的证书。
+ 2.如果是AFSSLPinningModeCertificate，则从serverTrust中去获取证书链，然后和我们一开始初始化设置的证书集合self.pinnedCertificates去匹配，如果有一对能匹配成功的，就返回YES，否则NO。 (通过拿证书去验证)
+ 
+ 什么是证书链？
+ 证书链由两个环节组成—信任锚（CA 证书）环节和已签名证书环节。自我签名的证书仅有一个环节的长度—信任锚环节就是已签名证书本身。
+
+ 简单来说，证书链就是就是根证书，和根据根证书签名派发得到的证书。
+
+ 3. 如果是AFSSLPinningModePublicKey公钥验证，则和第二步一样还是从serverTrust，获取证书链每一个证书的公钥，放到数组中。和我们的self.pinnedPublicKeys，去配对，如果有一个相同的，就返回YES，否则NO。(通过拿公钥去验证)
+ */
 /// AF可以让你在系统验证证书之前，就去自主验证。然后如果自己验证不正确，直接取消网络请求。否则验证通过则继续进行系统验证。
 - (BOOL)evaluateServerTrust:(SecTrustRef)serverTrust
                   forDomain:(NSString *)domain

@@ -435,6 +435,7 @@ static NSArray * AFPublicKeyTrustChainForServerTrust(SecTrustRef serverTrust) {
 
  3. 如果是AFSSLPinningModePublicKey公钥验证，则和第二步一样还是从serverTrust，获取证书链每一个证书的公钥，放到数组中。和我们的self.pinnedPublicKeys，去配对，如果有一个相同的，就返回YES，否则NO。(通过拿公钥去验证)
  */
+#warning zll 证书验证
 /// AF可以让你在系统验证证书之前，就去自主验证。然后如果自己验证不正确，直接取消网络请求。否则验证通过则继续进行系统验证。
 - (BOOL)evaluateServerTrust:(SecTrustRef)serverTrust
                   forDomain:(NSString *)domain

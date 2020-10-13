@@ -160,6 +160,7 @@ static inline BOOL AFStateTransitionIsValid(AFOperationState fromState, AFOperat
 // 合成setter、getter 生成成员变量_outputStream
 @synthesize outputStream = _outputStream;
 
+#warning zll 常驻线程
 + (void)networkRequestThreadEntryPoint:(id)__unused object {
     @autoreleasepool {
         [[NSThread currentThread] setName:@"AFNetworking"];
